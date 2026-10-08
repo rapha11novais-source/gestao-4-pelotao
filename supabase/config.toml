@@ -1,0 +1,4 @@
+[functions.platform]
+verify_jwt = false
+# Authentication is verified by auth.getUser(accessToken) in server.ts.
+# Anonymous requests are rejected before database access.
