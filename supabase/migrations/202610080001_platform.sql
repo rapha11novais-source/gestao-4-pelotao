@@ -131,3 +131,9 @@ ALTER TABLE private.settings ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON SCHEMA private FROM PUBLIC,anon,authenticated;
 REVOKE ALL ON ALL TABLES IN SCHEMA private FROM PUBLIC,anon,authenticated;
 ALTER DEFAULT PRIVILEGES IN SCHEMA private REVOKE ALL ON TABLES FROM PUBLIC,anon,authenticated;
+-- The dashboard's automatic RLS trigger is internal, never a client RPC.
+DO $$ BEGIN
+  IF to_regprocedure('public.rls_auto_enable()') IS NOT NULL THEN
+    REVOKE EXECUTE ON FUNCTION public.rls_auto_enable() FROM PUBLIC,anon,authenticated;
+  END IF;
+END $$;
