@@ -1,4 +1,4 @@
-import {stmt,db,UserError,integer,textValue,auditStmt,manager,authAdmin,type Actor} from './server.ts';
+import {stmt,db,UserError,integer,textValue,auditStmt,manager,authAdmin,mutableUser,type Actor} from './server.ts';
 import {localDay,type Item} from './domain.ts';
 export const reservedSQL=`COALESCE((SELECT SUM(li.quantity) FROM load_items li JOIN loads l ON l.id=li.load_id WHERE li.item_id=i.id AND l.status='ativa'),0)+COALESCE((SELECT SUM(m.quantity) FROM movements m WHERE (m.status='aguardando' AND m.item_id=i.id) OR (m.status='recebida' AND (i.id='lote-'||m.id OR (m.item_id=i.id AND NOT EXISTS(SELECT 1 FROM inventory x WHERE x.id='lote-'||m.id))))),0)`;
 export const stockQuery=`SELECT i.*, (${reservedSQL}) AS reserved FROM inventory i`;
@@ -7,7 +7,7 @@ export async function report(a:Actor,id:string){const l=await stmt('SELECT * FRO
 export async function loadAction(a:Actor,b:any,now:string){
  const today=localDay(new Date(now));
  if(b.action==='set-officer-password'){
-  manager(a);const o=await stmt('SELECT * FROM officers WHERE id=?',textValue(b.officerId)).first<any>();if(!o||!o.active||!o.validated)throw new UserError('Valide e ative o cadastro antes de criar o acesso.');
+  manager(a);await mutableUser(textValue(b.officerId));const o=await stmt('SELECT * FROM officers WHERE id=?',textValue(b.officerId)).first<any>();if(!o||o.deleted_at||!o.active||!o.validated)throw new UserError('Valide e ative o cadastro antes de criar o acesso.');
   const password=typeof b.password==='string'?b.password:'';if(password.length<12||new TextEncoder().encode(password).length>72)throw new UserError('Use uma senha com pelo menos 12 caracteres e até 72 bytes.');
   const identity=o.registration+'@accounts.invalid';const existing=(await stmt('SELECT id FROM auth.users WHERE lower(email)=?',identity).first<any>())?.id;
   const client=authAdmin();let uid=existing;if(existing){const {error}=await client.auth.admin.updateUserById(existing,{password});if(error)throw new UserError('Não foi possível redefinir a senha.',503);}else{const {data,error}=await client.auth.admin.createUser({email:identity,password,email_confirm:true,user_metadata:{full_name:o.name}});if(error||!data.user)throw new UserError('Não foi possível criar o acesso.',503);uid=data.user.id;}

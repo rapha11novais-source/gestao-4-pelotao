@@ -5,7 +5,7 @@ const normalize=(s:string)=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').to
 export default function OfficerPicker({officers,selected,onChange,lockedId}:{officers:Officer[];selected:string[];onChange:(ids:string[])=>void;lockedId?:string|null}){
  const id=useId(),input=useRef<HTMLInputElement>(null),container=useRef<HTMLDivElement>(null);
  const [query,setQuery]=useState(''),[open,setOpen]=useState(false),[index,setIndex]=useState(0);
- const choices=officers.filter(o=>o.active&&(normalize(o.name).startsWith(normalize(query))||o.registration.startsWith(query.trim()))).sort((a,b)=>a.name.localeCompare(b.name,'pt-BR'));
+ const choices=officers.filter(o=>!o.deleted_at&&o.active&&(normalize(o.name).startsWith(normalize(query))||o.registration.startsWith(query.trim()))).sort((a,b)=>a.name.localeCompare(b.name,'pt-BR'));
  useEffect(()=>{if(open)document.getElementById(id+'-'+index)?.scrollIntoView({block:'nearest'});},[open,index,id]);
  function choose(o:Officer){if(!o.validated)return;if(o.id!==lockedId)onChange(selected.includes(o.id)?selected.filter(x=>x!==o.id):[...selected,o.id]);setQuery('');setIndex(0);input.current?.focus();}
  return <div className="officer-picker" ref={container} onBlur={()=>setTimeout(()=>{if(!container.current?.contains(document.activeElement))setOpen(false)},0)}>

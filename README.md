@@ -40,3 +40,11 @@ Depois da conferência, cada integrante registra uma carga por policial/dia. A q
 O PDF diário contém somente os materiais da carga individual, com identidade do policial, município, dia, horário e referência à conferência. O servidor autoriza o policial a acessar seus próprios relatórios e o comando a fiscalizar os registros gerais. O histórico continua disponível após a devolução.
 
 Somente o perfil de comando pode excluir conferências, com motivo obrigatório e após a devolução das cargas vinculadas. A exclusão retira o registro das conferências ativas e preserva os dados e a auditoria. O PDF de uma carga devolvida indica eventual exclusão posterior da conferência.
+
+## Administração delegada
+
+Os perfis de administrador e comando têm os mesmos recursos de gestão, incluindo criação de usuários e senhas, exclusão de conferências, exclusão de usuários e concessão de perfis administrativos. Em Efetivo e acessos, use Tornar administrador ou edite o perfil de acesso do cadastro.
+
+A conta institucional 4º Pelotão é identificada pelo ID de autenticação armazenado exclusivamente em private.settings.owner_user_id. A API e os gatilhos do banco impedem excluir ou retirar os privilégios desse perfil. O nome exibido ou parâmetros enviados pela interface não determinam quem é o gestor principal.
+
+A exclusão de usuários bloqueia imediatamente novas operações mesmo com uma sessão existente, remove o cadastro da lista ativa e preserva histórico, matrícula e auditoria. Antes de excluir, devolva as cargas e cautelas abertas. Usuários excluídos podem ser consultados e restaurados; a restauração exige posterior validação e ativação do cadastro para retomar o acesso.
