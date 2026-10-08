@@ -1,4 +1,4 @@
-import {createClient} from 'npm:@supabase/supabase-js@2';
+import {createClient} from 'npm:@supabase/supabase-js@2.117.3';
 import {database} from './db.ts';
 export class UserError extends Error {constructor(message:string,public status=400){super(message);}}
 export const db=()=>database;
