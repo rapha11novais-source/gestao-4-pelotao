@@ -1,9 +1,9 @@
-import type {Check,Officer,Entry} from './domain';
+import type {Check,Officer,Entry,PersonalLoad} from './domain';
 import {dateTime,needsJustification} from './domain';
 type Filters={category:string;condition:string;onlyDivergence:boolean};
 const download=(buffer:BlobPart,name:string,mime:string)=>{const url=URL.createObjectURL(new Blob([buffer],{type:mime}));const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)};
 export async function exportReport(format:'pdf'|'xlsx',checks:Check[],officers:Officer[],filters:Filters){
- const crew=(c:Check)=>c.crew_labels?.length?c.crew_labels.join('; '):c.crew.map(id=>{const o=officers.find(x=>x.id===id);return o?`${o.rank} ${o.callsign} (${o.registration})`:id}).join('; ');
+ const crew=(c:Check)=>c.crew_labels?.length?c.crew_labels.join('; '):c.crew.map(id=>{const o=officers.find(x=>x.id===id);return o?`${o.name} (${o.registration})`:id}).join('; ');
  const visible=(e:Entry)=>(filters.category==='todos'||e.category===filters.category)&&(filters.condition==='todos'||e.condition===filters.condition)&&(!filters.onlyDivergence||needsJustification(e,e.expected||0));
  const rows=checks.flatMap(c=>c.entries.filter(visible).map(e=>[c.id,c.city,dateTime(c.finalized_at),c.actor_name,crew(c),e.category||'',e.name||'',e.serial||'',e.city||c.city,e.location||c.city,e.expected||0,e.quantity||0,(e.quantity||0)-(e.expected||0),e.condition,e.identification?'Sim':'Não',e.notes,c.notes]));
  if(!rows.length)throw new Error('Nenhum material corresponde aos filtros.');
@@ -29,4 +29,13 @@ export async function exportReport(format:'pdf'|'xlsx',checks:Check[],officers:O
   let y=(doc as any).lastAutoTable.finalY+9;const notesLines=doc.splitTextToSize('Observações do serviço: '+(c.notes||'Sem observações.'),270);if(y+notesLines.length*4+32>190){doc.addPage();y=20}doc.setFontSize(9);doc.text(notesLines,12,y);y+=notesLines.length*4+14;doc.line(15,y,125,y);doc.line(160,y,280,y);doc.text('Assinatura do responsável pela conferência',15,y+5);doc.text('Validação administrativa / comando',160,y+5);doc.setFontSize(7);doc.text('Registro: '+c.id,12,y+13);doc.text('Conta autenticada: '+c.actor,12,y+17);
  });
  const total=doc.getNumberOfPages();for(let page=1;page<=total;page++){doc.setPage(page);doc.setTextColor(90,100,115);doc.setFontSize(8);doc.text('4º Pelotão · Emitido em '+dateTime(new Date().toISOString()),12,202);doc.text(`${page} / ${total}`,279,202)}doc.save(filename+'.pdf');
+}
+export async function exportDailyLoad({load,check,officer}:{load:PersonalLoad;check:Check;officer:{name:string;registration:string}}){
+ const {jsPDF}=await import('jspdf');const {default:autoTable}=await import('jspdf-autotable');const doc=new jsPDF({unit:'mm',format:'a4'});
+ doc.setFillColor(21,42,69);doc.rect(0,0,210,29,'F');doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(12);doc.text('POLÍCIA MILITAR DA BAHIA | 80ª CIPM | 4º PELOTÃO',12,12);doc.setFontSize(10);doc.text('CARGA INDIVIDUAL DIÁRIA DE MATERIAL DO DPM',12,21);
+ doc.setTextColor(25,39,57);doc.setFont('helvetica','normal');doc.setFontSize(10);let y=40;
+ for(const line of [`Município do serviço: ${load.city}`,`Dia do serviço: ${load.service_day.split('-').reverse().join('/')}`,`Policial: ${load.officer_name}`,`Matrícula: ${officer.registration}`,`Carga assumida em: ${dateTime(load.created_at)} (Brasília)`,`Conferência do DPM: ${check.actor_name}`,`Conferência realizada em: ${dateTime(check.finalized_at)} (Brasília)`,`Situação: ${load.status==='ativa'?'Ativa - material reservado':'Devolvida em '+dateTime(load.returned_at)}`,...(check.deleted_at?['Conferência posteriormente excluída pelo gestor em '+dateTime(check.deleted_at)]:[])]){const lines=doc.splitTextToSize(line,186);doc.text(lines,12,y);y+=lines.length*5+2;}
+ autoTable(doc,{startY:y+2,head:[['Material / identificação','Quantidade assumida','Condição na conferência']],body:load.entries.map(e=>[e.name+(e.serial?'\n'+e.serial:''),e.quantity,e.condition]),styles:{fontSize:10,cellPadding:3,overflow:'linebreak'},headStyles:{fillColor:[35,60,92]},alternateRowStyles:{fillColor:[243,246,250]},margin:{left:12,right:12,bottom:20},columnStyles:{0:{cellWidth:105},1:{cellWidth:32},2:{cellWidth:49}}});
+ y=(doc as any).lastAutoTable.finalY+10;const notes=doc.splitTextToSize('Observações: '+(load.notes||'Sem observações.'),186);if(y+notes.length*5+35>275){doc.addPage();y=20}doc.text(notes,12,y);y+=notes.length*5+15;doc.line(25,y,185,y);doc.text('Assinatura do policial responsável',68,y+6);doc.setFontSize(8);doc.text('Carga: '+load.id,12,y+16);doc.text('Conferência: '+load.check_id,12,y+21);
+ const total=doc.getNumberOfPages();for(let p=1;p<=total;p++){doc.setPage(p);doc.setFontSize(8);doc.setTextColor(90,100,115);doc.text('Emitido em '+dateTime(new Date().toISOString())+' (Brasília)',12,289);doc.text(`${p} / ${total}`,187,289)}doc.save(`4-pelotao-carga-${load.service_day}-${officer.registration}.pdf`);
 }

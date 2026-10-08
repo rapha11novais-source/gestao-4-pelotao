@@ -11,13 +11,15 @@ export async function actor(req:Request):Promise<Actor>{
  const settings=await stmt('SELECT value FROM settings WHERE key=?','owner_email').first<{value:string}>();
  const owner=(settings?.value||'').trim().toLowerCase();
  if(!p&&owner&&email===owner){const created=await stmt("INSERT OR IGNORE INTO principals(id,officer_id,role,email,name) VALUES(?,NULL,'comando',?,?)",uid,email,name).run();if(created.meta.changes)await auditStmt({id:uid,officer_id:null,role:'comando',email,name},'Acesso inicial autorizado',uid,null,{role:'comando',militaryIdentityLinked:false}).run();p=await stmt('SELECT * FROM principals WHERE id=?',uid).first<Actor>();}
- const o=await stmt('SELECT * FROM officers WHERE lower(email)=? AND active=1 AND validated=1',email).first<any>();
- if(o){await stmt('INSERT INTO principals(id,officer_id,role,email,name) VALUES(?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET officer_id=excluded.officer_id,role=excluded.role,email=excluded.email,name=excluded.name',uid,o.id,o.role,email,o.rank+' '+o.callsign).run();return {id:uid,officer_id:o.id,role:o.role,email,name:o.rank+' '+o.callsign};}
+ const o=await stmt('SELECT * FROM officers WHERE auth_user_id=? OR (auth_user_id IS NULL AND lower(email)=?)',uid,email).first<any>();
+ if(o){if(!o.active||!o.validated)throw new UserError('Seu cadastro precisa de autorização ou está inativo. Procure o gestor.',403);await stmt('INSERT INTO principals(id,officer_id,role,email,name) VALUES(?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET officer_id=excluded.officer_id,role=excluded.role,email=excluded.email,name=excluded.name',uid,o.id,o.role,email,o.name).run();return {id:uid,officer_id:o.id,role:o.role,email,name:o.name};}
  if(p?.officer_id)throw new UserError('Seu cadastro precisa de autorização ou está inativo. Procure o comando.',403);
  if(!p)throw new UserError('Seu e-mail ainda não foi autorizado pelo comando.',403);
  return p;
 }
 export function admin(a:Actor){if(!['comando','administrador'].includes(a.role))throw new UserError('Esta operação exige autorização administrativa.',403);}
+export function manager(a:Actor){if(a.role!=='comando')throw new UserError('Somente o gestor do pelotão pode realizar esta operação.',403);}
+export function authAdmin(){const keys=JSON.parse(Deno.env.get('SUPABASE_SECRET_KEYS')||'{}');const key=keys.default||Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');const url=Deno.env.get('SUPABASE_URL');if(!key||!url)throw new UserError('O serviço de contas está indisponível.',503);return createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false}});}
 export function textValue(v:unknown,max=2000){return typeof v==='string'?v.trim().slice(0,max):'';}
 export function integer(v:unknown,min=0,max=1000000){if(!Number.isInteger(v)||Number(v)<min||Number(v)>max)throw new UserError('Informe uma quantidade inteira válida.');return Number(v);}
 export function auditStmt(a:Actor,action:string,entity:string,before:unknown,after:unknown,now=new Date().toISOString()){return stmt('INSERT INTO audit(id,actor,actor_name,action,entity,before,after,created_at) VALUES(?,?,?,?,?,?,?,?)',crypto.randomUUID(),a.id,a.name,action,entity,before==null?null:JSON.stringify(before),after==null?null:JSON.stringify(after),now);}
