@@ -1,7 +1,7 @@
-import {admin,db,UserError,textValue,auditStmt,mutableUser,type Actor} from './server.ts';
+import {admin,db,UserError,textValue,auditStmt,mutableUser,manageOfficer,general,stmt,type Actor} from './server.ts';
 export async function accountAction(a:Actor,b:any,now:string){
  if(!['delete-user','restore-user','set-user-role'].includes(b.action))return null;
- admin(a);const id=textValue(b.officerId||b.id,100);await mutableUser(id);
+ admin(a);const id=textValue(b.officerId||b.id,100);await mutableUser(id);await manageOfficer(a,await stmt('SELECT * FROM officers WHERE id=?',id).first());if(b.action==='set-user-role')general(a);
  if(id===a.officer_id&&b.action==='delete-user')throw new UserError('Outro administrador deve excluir seu cadastro.');
  const reason=textValue(b.reason);if(reason.length<3)throw new UserError('Informe o motivo desta alteração.');
  await db().transaction(async tx=>{
@@ -14,8 +14,8 @@ export async function accountAction(a:Actor,b:any,now:string){
    if(!o.deleted_at)throw new UserError('O usuário não está excluído.');
    await tx.batch([s('UPDATE officers SET deleted_at=NULL,deleted_by=NULL,deletion_reason=NULL WHERE id=?',id),auditStmt(a,'Cadastro de usuário restaurado',id,o,{reason,requiresValidation:true},now)]);
   }else{
-   const role=textValue(b.role,40);if(!['policial','administrador','comando'].includes(role))throw new UserError('Perfil inválido.');if(o.deleted_at)throw new UserError('Restaure o cadastro antes de alterar o perfil.');if(id===a.officer_id&&role==='policial')throw new UserError('Outro administrador deve alterar seu perfil.');
-   await tx.batch([s('UPDATE officers SET role=? WHERE id=?',role,id),auditStmt(a,'Perfil de acesso alterado',id,{role:o.role},{role,reason},now)]);
+   const role=textValue(b.role,40);if(!['policial','administrador','comando','comandante','subcomandante'].includes(role))throw new UserError('Perfil inválido.');if(o.deleted_at)throw new UserError('Restaure o cadastro antes de alterar o perfil.');if(id===a.officer_id&&role==='policial')throw new UserError('Outro administrador deve alterar seu perfil.');
+   await tx.batch([s('UPDATE officers SET role=? WHERE id=?',role,id),auditStmt(a,'Perfil de acesso alterado',id,o,{role,reason,home_platoon:o.home_platoon,city:o.city},now)]);
   }
  });return {ok:true};
 }

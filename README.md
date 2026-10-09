@@ -1,50 +1,41 @@
-# Gestão operacional do 4º Pelotão
+# Gestão de Pelotões · 80ª CIPM
 
-Interface estática para GitHub Pages, com autenticação individual pelo Supabase Auth e banco PostgreSQL protegido no Supabase. A identidade visual utiliza o brasão fornecido pelo pelotão.
+Plataforma única para os 2º, 3º e 4º Pelotões, com interface estática no GitHub Pages, autenticação por matrícula no Supabase Auth e banco PostgreSQL privado. A cópia institucional usa o mesmo projeto Supabase; não duplica usuários ou inventários.
 
-## Execução
+## Desenvolvimento e publicação
 
-Node.js 22 ou superior. Execute `npm ci`, `npm run build` e `npm run dev` para desenvolvimento. O caminho de publicação padrão é `/gestao-4-pelotao/`.
+Use Node.js 24, `npm ci`, `npm run dev` e `npm run build`. O caminho padrão preserva `/gestao-4-pelotao/`; a publicação institucional define `VITE_BASE_PATH=/`. O workflow GitHub Actions publica a pasta `dist`.
 
-O arquivo `public/config.json` contém exclusivamente a URL do projeto Supabase e sua chave **publishable/anon**, própria para clientes públicos. Nunca inclua chave secreta, `service_role`, senha de banco ou tokens administrativos neste repositório.
+`public/config.json` contém apenas a URL Supabase e sua chave pública publishable/anon. Nunca inclua senha, chave secreta, service_role, token temporário, relação nominal ou inventário no repositório. Importações, verificações com dados institucionais e códigos privados ficam em `.private/`, que é ignorado pelo Git.
 
-## Banco e autenticação
+## Estrutura e acessos
 
-1. Aplique, em ordem, as migrações de estrutura em `supabase/migrations` a um projeto Supabase gratuito.
-2. Importe os dados institucionais diretamente no banco por um canal administrativo autorizado. Não publique nomes, matrículas, números de série, inventários, históricos ou e-mails aqui.
-3. Configure `private.settings.owner_email` com a identidade técnica do gestor autorizado. Este dado não fica no código da interface.
-4. Publique a Edge Function `platform`. O gateway usa `verify_jwt=false` porque a função verifica explicitamente cada token com **Supabase Auth `getUser`**, exige e-mail confirmado e aplica autorização antes de consultar o banco. Isso permite os formatos atuais de tokens do Supabase sem aceitar requisições anônimas.
-5. Configure a URL do site e as URLs permitidas de confirmação/recuperação no Supabase Auth para a URL publicada em GitHub Pages. Mantenha a confirmação de e-mail habilitada e senha mínima de 12 caracteres.
-6. Preencha `public/config.json` com a URL e a chave pública verificadas do projeto.
+- 2º Pelotão: Ribeirão do Largo e Encruzilhada.
+- 3º Pelotão: Belo Campo, Tremedal e Piripá.
+- 4º Pelotão: Condeúba, Cordeiros e Mortugaba.
 
-As tabelas estão no schema `private`, com RLS habilitada e sem concessão de leitura/escrita para `anon` ou `authenticated`. A Edge Function usa a conexão de banco fornecida exclusivamente no servidor e restringe cada operação ao perfil autenticado. O administrador inicial é determinado por um e-mail previamente autorizado, nunca pelo primeiro visitante público. Não há senhas compartilhadas nem dados operacionais incorporados ao código público.
+Somente a conta técnica principal 4º Pelotão e o cadastro designado em `private.settings.general_manager_officer_id` têm gestão geral. O identificador fixo da conta técnica é armazenado em `owner_user_id`; nomes exibidos e metadados editáveis do usuário não concedem privilégios.
 
-O acesso administrativo utiliza o login **4º Pelotão**, sem e-mail pessoal. Internamente, o Supabase Auth mantém uma identidade técnica no domínio reservado `accounts.invalid`, sem envio de mensagens. A primeira senha é definida pelo responsável com um código privado, válido por 45 minutos e utilizável uma única vez. O servidor compara o hash de um token aleatório de 256 bits armazenado no schema privado antes de criar a conta; a chave administrativa permanece exclusivamente no servidor. O código e a senha nunca devem entrar no repositório nem no endereço do navegador. A recuperação desse acesso institucional exige um procedimento administrativo no Supabase, pois não há caixa de e-mail associada. O gestor cria ou redefine as senhas em **Efetivo e acessos**, após validar o cadastro. Cada policial entra com sua matrícula; as identidades internas usam o domínio reservado `accounts.invalid`, sem necessidade de e-mail pessoal. Desative o cadastro público em Supabase Auth → Sign In / Providers → Allow new users to sign up. A criação das contas ocorre exclusivamente na função autenticada de gestão. As senhas nunca são registradas em auditoria.
+Comandantes e administradores gerenciam o próprio pelotão e consultam indicadores dos demais. Subcomandantes consultam seu pelotão; o gestor geral pode conceder individualmente cadastro de materiais, gestão de policiais, movimentações, auditoria e consulta de status global. Policiais possuem acesso operacional pelos vínculos ativos em `officer_platoons`. Vínculos múltiplos não conferem administração.
 
-## Publicação
+Cadastros anteriores e registros do 4º são preservados. A relação nominal dos novos pelotões é importada por canal administrativo, deduplicada pela matrícula. Nomes extraídos de imagens devem ser validados antes de autorizar o acesso; não são incorporados aos arquivos públicos.
 
-Em Settings → Pages do repositório, selecione GitHub Actions. O workflow compila a interface e publica a pasta `dist`. Novos commits em `main` atualizam a interface automaticamente.
+## Conferências, cargas e histórico
 
-O plano gratuito do Supabase pode pausar projetos com baixa atividade por sete dias e possui limites de uso. Não há serviço Render ou recurso pago neste projeto. O funcionamento completo depende de configurar e verificar o projeto Supabase: publicar a interface sozinha não ativa login ou banco.
+Uma conferência por município/dia, realizada pelo comandante da guarnição, e uma conferência por responsável/dia. Cada policial registra uma carga por dia. O dia é calculado em America/Sao_Paulo; a data e hora efetivas são registradas no servidor, sem horário obrigatório.
 
-## Funcionalidades
+As cargas usam o menor valor entre o estoque patrimonial e a quantidade encontrada, descontando cargas e cautelas ativas. Bloqueios de linha e transações evitam duplicidade e excesso de retirada. O estoque permanece reservado até a devolução física. Relatórios PDF/Excel respeitam o escopo; o PDF individual identifica a carga, o policial, a matrícula, o município e o pelotão.
 
-Conferências de serviço com rascunho e revisão, justificativas obrigatórias, inventário por município, cautelas individuais e por lote, recebimento/devolução, ocorrências com providências, auditoria e relatórios PDF/Excel. Os materiais e cadastros são carregados do banco somente após autenticação e autorização.
+Exclusões de materiais, usuários e conferências são lógicas, justificadas e auditadas. Cargas e cautelas ativas devem ser devolvidas antes da exclusão. Retificações são acrescentadas ao histórico e aos relatórios; não substituem a conferência finalizada original. A auditoria registra nome, matrícula, município, pelotão, horário e dados anteriores/novos.
 
-## Conferência e carga individual
+## Senhas e segurança
 
-O comandante da guarnição registra uma conferência por município/dia, incluindo os nomes completos dos policiais. A data e o horário são obtidos no servidor, considerando o dia de Brasília, sem horário obrigatório. Há também limite de uma conferência por policial/dia. A seleção da guarnição permite pesquisa pela primeira letra, matrícula e navegação com as setas do teclado.
+O login pessoal é a matrícula, sem e-mail pessoal. O domínio reservado `accounts.invalid` fornece a identidade interna, sem envio de mensagens. A senha temporária usa PrimeiroNome.Matrícula, apenas por solicitação explícita do responsável. A troca por uma senha diferente, de no mínimo 12 caracteres, é obrigatória antes de acessar materiais ou realizar operações. As senhas não entram na auditoria.
 
-Depois da conferência, cada integrante registra uma carga por policial/dia. A quantidade disponível considera o estoque, o total encontrado na conferência, as outras cargas e as cautelas ativas. Transações e bloqueios das linhas de estoque impedem retiradas simultâneas acima do disponível. Os materiais permanecem reservados até a confirmação da devolução física. Devolver uma carga não permite criar outra no mesmo dia.
+A preparação das contas exige autorização privada aleatória de 256 bits, com validade curta, comparação por hash e utilização única. Uma retomada preserva contas já preparadas. O usuário administrativo 4º Pelotão mantém sua senha e identidade. Cadastros inativos, excluídos ou pendentes de validação não ganham acesso pelo fato de existir uma conta Auth.
 
-O PDF diário contém somente os materiais da carga individual, com identidade do policial, município, dia, horário e referência à conferência. O servidor autoriza o policial a acessar seus próprios relatórios e o comando a fiscalizar os registros gerais. O histórico continua disponível após a devolução.
+As tabelas ficam no schema private, com RLS e permissões negadas a anon/authenticated. A função platform valida o token com Supabase Auth getUser e obtém vínculos/permissões do banco. O contexto autenticado também é transmitido às transações; gatilhos PostgreSQL validam escopo de escrita e imutabilidade do histórico. Operações entre pelotões e alterações de permissões exigem gestor geral.
 
-Somente o perfil de comando pode excluir conferências, com motivo obrigatório e após a devolução das cargas vinculadas. A exclusão retira o registro das conferências ativas e preserva os dados e a auditoria. O PDF de uma carga devolvida indica eventual exclusão posterior da conferência.
+O gateway platform usa verify_jwt=false porque a função implementa autenticação própria explícita e os procedimentos privados de configuração verificam seus tokens de autorização. As únicas origens da interface permitidas durante a migração são o site original e o endereço institucional. Mantenha cadastro público e login anônimo desativados no Supabase Auth. Configure Site URL e redirects para o endereço institucional, preservando o original como endereço autorizado durante a validação.
 
-## Administração delegada
-
-Os perfis de administrador e comando têm os mesmos recursos de gestão, incluindo criação de usuários e senhas, exclusão de conferências, exclusão de usuários e concessão de perfis administrativos. Em Efetivo e acessos, use Tornar administrador ou edite o perfil de acesso do cadastro.
-
-A conta institucional 4º Pelotão é identificada pelo ID de autenticação armazenado exclusivamente em private.settings.owner_user_id. A API e os gatilhos do banco impedem excluir ou retirar os privilégios desse perfil. O nome exibido ou parâmetros enviados pela interface não determinam quem é o gestor principal.
-
-A exclusão de usuários bloqueia imediatamente novas operações mesmo com uma sessão existente, remove o cadastro da lista ativa e preserva histórico, matrícula e auditoria. Antes de excluir, devolva as cargas e cautelas abertas. Usuários excluídos podem ser consultados e restaurados; a restauração exige posterior validação e ativação do cadastro para retomar o acesso.
+O plano é gratuito, sujeito aos limites e às regras de inatividade do GitHub Pages e do Supabase.
