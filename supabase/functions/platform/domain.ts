@@ -1,17 +1,18 @@
-export const PLATOONS=[{id:'p2',name:'2º Pelotão',cities:['Ribeirão do Largo','Encruzilhada']},{id:'p3',name:'3º Pelotão',cities:['Belo Campo','Tremedal','Piripá']},{id:'p4',name:'4º Pelotão',cities:['Condeúba','Cordeiros','Mortugaba']}] as const;
-export const CITIES = PLATOONS.flatMap(p=>[...p.cities]);
-export const platoonOf=(city:string)=>PLATOONS.find(p=>p.cities.includes(city as never))?.id;
-export const platoonName=(id:string)=>PLATOONS.find(p=>p.id===id)?.name||id;
+import {structure,catalogPlatoons,catalogCities} from './structure.ts';
+export const PLATOONS=new Proxy([] as {id:string;name:string;cities:string[];active:boolean;parent_unit:string}[],{get:(_t,key)=>{const list=catalogPlatoons(),value=Reflect.get(list,key);return typeof value==='function'?value.bind(list):value}});
+export const CITIES=new Proxy([] as string[],{get:(_t,key)=>{const list=catalogCities(),value=Reflect.get(list,key);return typeof value==='function'?value.bind(list):value}});
+export const platoonOf=(city:string)=>structure().units.find(u=>u.name===city)?.platoon_id;
+export const platoonName=(id:string)=>structure().platoons.find(p=>p.id===id)?.name||id;
 export const CONDITIONS = ['Ótimo','Bom','Ruim','Não encontrado'] as const;
 export const ROLE_LABELS:Record<string,string> = {gestor_geral:'Gestor geral',comandante:'Comandante de pelotão',subcomandante:'Subcomandante de pelotão',comando:'Comando do Pelotão', administrador:'Administrador autorizado', policial:'Policial militar'};
-export type Item = { id:string; name:string; category:string; serial:string|null; manufacturer:string|null; model:string|null; caliber:string|null; city:string; location:string; quantity:number; condition:string; notes:string; source:string; version:number;deleted_at?:string|null;reserved?:number;available?:number };
+export type Item = {armament_type?:string|null; id:string; name:string; category:string; serial:string|null; manufacturer:string|null; model:string|null; caliber:string|null; city:string; location:string; quantity:number; condition:string; notes:string; source:string; version:number;deleted_at?:string|null;reserved?:number;available?:number };
 export type Officer = {id:string; name:string; rank:string; callsign:string; registration:string; city:string; role:string; email:string|null; active:number; validated:number;auth_user_id?:string|null;deleted_at?:string|null;deleted_by?:string|null;deletion_reason?:string|null;protected?:boolean;home_platoon?:string;platoons?:string[];permissions?:Record<string,boolean>};
-export type Entry = {id:string; quantity:number|null; condition:string; notes:string; identification:boolean; expected?:number; version?:number; name?:string; serial?:string|null; category?:string; city?:string; location?:string;};
+export type Entry = {unavailable?:boolean;id:string; quantity:number|null; condition:string; notes:string; identification:boolean; expected?:number; version?:number; name?:string; serial?:string|null; category?:string; city?:string; location?:string;};
 export type Check = {id:string;city:string;actor:string;officer_id:string|null;actor_name:string;crew:string[];crew_labels?:string[];corrections?:{id:string;actor_name:string;actor_registration:string|null;created_at:string;reason:string;correction:string}[];entries:Entry[];notes:string;status:string;created_at:string;updated_at:string;finalized_at:string|null;service_day?:string;deleted_at?:string|null;deleted_by?:string|null;deletion_reason?:string|null};
 export type Movement={id:string;item_id:string;item_name:string;officer_id:string;origin:string;destination:string;quantity:number;withdrawn_at:string;due_at:string|null;received_at:string|null;returned_at:string|null;status:string;notes:string;created_by:string};
 export type Alert={id:string;check_id:string;item_id:string;city:string;title:string;detail:string;status:string;created_at:string;resolved_at:string|null;resolution:string|null;resolved_by:string|null};
 export function localDay(date=new Date()){return new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).format(date);}
 export function dateTime(value:string|null){return value?new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo',dateStyle:'short',timeStyle:'short'}).format(new Date(value)):'—';}
-export function needsJustification(e:Entry,expected:number){return e.quantity!==expected||['Ruim','Não encontrado'].includes(e.condition)||e.identification;}
+export function needsJustification(e:Entry,expected:number){return e.quantity!==expected||['Ruim','Não encontrado'].includes(e.condition)||e.identification||!!e.unavailable;}
 
-export type PersonalLoad={id:string;check_id:string;actor:string;officer_id:string;officer_name:string;city:string;service_day:string;entries:{id:string;name:string;serial:string|null;category:string;city:string;location:string;quantity:number;condition:string}[];notes:string;status:string;created_at:string;returned_at:string|null};
+export type PersonalLoad={armament?:any;closing?:any;id:string;check_id:string;actor:string;officer_id:string;officer_name:string;city:string;service_day:string;entries:{id:string;name:string;serial:string|null;category:string;city:string;location:string;quantity:number;condition:string}[];notes:string;status:string;created_at:string;returned_at:string|null};

@@ -4,6 +4,7 @@ export async function extraAction(a:Actor,b:any,now:string){
  if(b.action==='set-links'){
   general(a);const o=await stmt('SELECT * FROM officers WHERE id=?',textValue(b.officerId)).first<any>();if(!o||o.deleted_at)throw new UserError('Cadastro não disponível.');
   const links=Array.isArray(b.platoons)?[...new Set<string>(b.platoons)]:null;if(!links||links.some(p=>!PLATOONS.some(x=>x.id===p)))throw new UserError('Vínculos inválidos.');
+  const active=(await stmt("SELECT s.platoon_id FROM service_members m JOIN services s ON s.id=m.service_id WHERE m.officer_id=? AND s.status<>'encerrado' AND (m.status<>'encerrado' OR s.commander_officer_id=?)",o.id,o.id).all<any>()).results;if(active.some(v=>!links.includes(v.platoon_id)))throw new UserError('Encerre os serviços ativos antes de retirar seus vínculos operacionais.');
   const old=await stmt('SELECT platoon_id FROM officer_platoons WHERE officer_id=? AND active=1',o.id).all<any>();
   await db().batch([stmt('UPDATE officer_platoons SET active=0 WHERE officer_id=?',o.id),...links.map(p=>stmt('INSERT INTO officer_platoons(officer_id,platoon_id,active) VALUES(?,?,1) ON CONFLICT(officer_id,platoon_id) DO UPDATE SET active=1',o.id,p)),auditStmt(a,'Vínculos operacionais alterados',o.id,{...o,platoons:old.results.map(x=>x.platoon_id)},{city:o.city,home_platoon:o.home_platoon,platoons:links},now)]);return {ok:true};
  }

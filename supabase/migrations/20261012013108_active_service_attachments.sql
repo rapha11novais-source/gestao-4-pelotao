@@ -1,0 +1,1 @@
+INSERT INTO storage.buckets(id,name,public,file_size_limit,allowed_mime_types) VALUES('service-evidence','service-evidence',false,8388608,ARRAY['image/jpeg','image/png','image/webp','image/heic','image/heif','application/pdf']) ON CONFLICT(id) DO NOTHING;

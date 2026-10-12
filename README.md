@@ -22,11 +22,27 @@ Cadastros anteriores e registros do 4º são preservados. A relação nominal do
 
 ## Conferências, cargas e histórico
 
-Uma conferência por município/dia, realizada pelo comandante da guarnição, e uma conferência por responsável/dia. Cada policial registra uma carga por dia. O dia é calculado em America/Sao_Paulo; a data e hora efetivas são registradas no servidor, sem horário obrigatório.
+Uma conferência inicial por serviço e uma cautela por integrante em cada serviço, inclusive pelo comandante. Serviços de 8, 24, 48, 72 ou 96 horas usam o início efetivo informado pelo responsável e calculam o encerramento previsto. As operações têm data/hora de registro no servidor e apresentação no horário de Brasília. Não existe encerramento automático por horário ou mudança de dia.
 
 As cargas usam o menor valor entre o estoque patrimonial e a quantidade encontrada, descontando cargas e cautelas ativas. Bloqueios de linha e transações evitam duplicidade e excesso de retirada. O estoque permanece reservado até a devolução física. Relatórios PDF/Excel respeitam o escopo; o PDF individual identifica a carga, o policial, a matrícula, o município e o pelotão.
 
 Exclusões de materiais, usuários e conferências são lógicas, justificadas e auditadas. Cargas e cautelas ativas devem ser devolvidas antes da exclusão. Retificações são acrescentadas ao histórico e aos relatórios; não substituem a conferência finalizada original. A auditoria registra nome, matrícula, município, pelotão, horário e dados anteriores/novos.
+
+## Serviço ativo e passagem de responsabilidade
+
+Cada DPM mantém no máximo um serviço aberto, incluindo a conferência em rascunho. A finalização da conferência libera a cautela somente aos integrantes cadastrados. O encerramento individual confirma cada equipamento, o armamento e as munições; o encerramento geral é confirmado pelo comandante da guarnição depois dos encerramentos individuais. A unidade é liberada para o próximo serviço somente após essa confirmação geral. Uma intervenção excepcional exige gestor geral ou comandante do próprio pelotão, justificativa e auditoria, sem presumir devoluções.
+
+Equipamentos não devolvidos permanecem reservados mesmo depois do encerramento. Devoluções complementares e transferências formais acrescentam eventos, mantendo o recebimento e o encerramento originais. Avarias e divergências geram pendências para o comando. Fotos e PDFs de conferência e encerramento usam o bucket privado `service-evidence`, com até 8 MB por arquivo, identificação do remetente e links autenticados de 60 segundos.
+
+Cada policial deve confirmar uma pistola do DPM ou informar sua pistola institucional de carga fixa. O cadastro permanente da carga fixa é reutilizado; uma substituição preserva o registro anterior e exige justificativa. Munições de carga fixa são declaradas separadamente das retiradas do DPM, inclusive com justificativa quando forem zero. O armamento permanente não integra o inventário do DPM e não exige devolução ao final do serviço. O PDF individual inclui armamento, munições, jornada e encerramento.
+
+Os registros anteriores à implantação continuam intactos. A última conferência de cada unidade é apresentada como registro legado aguardando confirmação ou regularização, sem presumir jornada, devolução ou encerramento. As datas originais são identificadas como datas do registro, sem atribuir um início operacional não informado.
+
+## Estrutura operacional expansível
+
+Os pelotões, municípios e DPMs são carregados do banco em cada solicitação autenticada. O gestor geral cadastra e administra novas unidades pela interface, sem alteração do código ou duplicação de policiais. A identificação da unidade é estável para preservar os históricos; nome de apresentação, município e vinculação administrativa são registrados separadamente. Desativações e reorganizações exigem regularização dos serviços, cautelas, movimentações e custódias. Os registros não são excluídos.
+
+A estrutura é mantida no contexto de cada solicitação do servidor, evitando mistura de unidades entre requisições concorrentes. Vínculos operacionais múltiplos não concedem administração. A retirada de um vínculo é bloqueada enquanto existir serviço ainda sob responsabilidade do policial.
 
 ## Veículos apreendidos e recolhidos
 
