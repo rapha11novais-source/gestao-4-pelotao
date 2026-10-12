@@ -28,6 +28,18 @@ As cargas usam o menor valor entre o estoque patrimonial e a quantidade encontra
 
 Exclusões de materiais, usuários e conferências são lógicas, justificadas e auditadas. Cargas e cautelas ativas devem ser devolvidas antes da exclusão. Retificações são acrescentadas ao histórico e aos relatórios; não substituem a conferência finalizada original. A auditoria registra nome, matrícula, município, pelotão, horário e dados anteriores/novos.
 
+## Veículos apreendidos e recolhidos
+
+O módulo de custódia mantém registros independentes do encerramento do serviço. O comandante da guarnição inicia ou retoma sua conferência, vinculado à matrícula e ao DPM, para cadastrar veículos e registrar saídas. A conferência inclui automaticamente os veículos ativos; uma verificação pendente impede a finalização, e a não localização exige justificativa e gera alerta sem retirar o veículo da custódia. Os relatórios PDF e Excel preservam a situação verificada naquele serviço.
+
+O cadastro compara características físicas e documentais sem concluir pela existência de adulteração. Possíveis duplicidades exigem comparação explícita dos registros ativos e justificativa auditada de que são veículos distintos. Retificações e observações acrescentam eventos, preservando os dados anteriores.
+
+Somente uma saída formal, com confirmação da entrega física e destinação, encerra a custódia. A apresentação à Polícia Civil exige BO; outra destinação exige justificativa. A liberação depende de autorização registrada pelo comando do próprio pelotão ou gestor geral, vinculada ao veículo e à versão cadastral, consumida uma única vez. Uma retificação invalida autorizações da versão anterior.
+
+As fotos e os documentos ficam no bucket privado `vehicle-custody`, com limite de 8 MB por arquivo e formatos validados no servidor. A função autenticada valida o município antes de emitir links de acesso de 60 segundos. Nome, matrícula, data, finalidade e hash do anexo são registrados; nenhuma fotografia ou relação de veículos entra no repositório público.
+
+O comando acompanha alertas de conferência pendente, não localização, características divergentes, saída e permanência prolongada. O prazo de permanência é configurado por DPM, sem valor presumido. O trabalho `vehicle-custody-age-alerts` verifica os prazos a cada hora. A visualização e o tratamento dos alertas ficam no histórico da plataforma; não dependem de e-mail ou mensagens externas. Os novos dados usam o mesmo banco privado e preservam os cadastros anteriores.
+
 ## Senhas e segurança
 
 O login pessoal é a matrícula, sem e-mail pessoal. O domínio reservado `accounts.invalid` fornece a identidade interna, sem envio de mensagens. A senha temporária usa PrimeiroNome.Matrícula, apenas por solicitação explícita do responsável. A troca por uma senha diferente, de no mínimo 12 caracteres, é obrigatória antes de acessar materiais ou realizar operações. As senhas não entram na auditoria.
