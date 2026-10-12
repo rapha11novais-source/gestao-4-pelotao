@@ -4,3 +4,7 @@
 .service-active-banner>.ops-shield{margin-left:0;background:#ffffff0b;padding:0}.collective-dialog .closure-item .field input[type=number]{max-width:180px}
 
 .collective-dialog .closure-confirm-all{white-space:normal;line-height:1.5;font-size:12px;overflow-wrap:anywhere;max-width:100%;width:100%}.collective-dialog .closure-confirm-all svg{flex-shrink:0}.collective-dialog{max-width:850px}.ops-command-center .ops-kpis article{min-width:0}
+
+.service-modality-choice{padding:18px;border:1px solid #d8e4ec;border-radius:12px;background:#f5f9fc;margin:18px 0}.ops-planning{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:14px 18px;background:#edf7f8;border-bottom:1px solid #d6e9ec;color:#254b58}.ops-planning span{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.ops-personal-history .service-select{border:1px solid #dbe5ee;border-radius:10px;padding:16px;background:white;text-align:left}.ops-export{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}@media(max-width:600px){.ops-planning{display:block}.ops-planning span+span{margin-top:8px}}
+
+.ops-unit-stock{display:grid;gap:7px;padding:12px;background:#f0f6fa;border-radius:8px;margin:12px 0;font-size:12px;color:#466173}.ops-unit-stock strong{color:#18344c}
