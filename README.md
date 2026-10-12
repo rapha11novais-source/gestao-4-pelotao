@@ -71,3 +71,5 @@ O plano é gratuito, sujeito aos limites e às regras de inatividade do GitHub P
 ## Centro de operações
 
 A Visão Geral é a página inicial de todos os perfis. Os indicadores de policiais em serviço, guarnições ativas, serviços encerrados e atenção necessária consideram somente os registros visíveis conforme o acesso. A equipe operacional pode consultar seus integrantes; armamentos, cautelas e observações individuais de outros policiais continuam restritos ao responsável e ao comando autorizado. O comando pode selecionar unidades, consultar pendências e iniciar os encerramentos no próprio painel. Conferências e cargas por período permanecem disponíveis em uma seção de consulta expansível.
+
+A passagem anterior apresenta aos usuários autorizados do DPM as orientações do último encerramento, as divergências ainda abertas e as quantidades que permaneceram reservadas em serviços encerrados. O aviso não expõe relatórios individuais de outros pelotões e permanece até a regularização dos materiais e alertas.
