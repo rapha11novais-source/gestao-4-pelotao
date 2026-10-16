@@ -7,7 +7,7 @@ export async function unifiedServiceReport(a:Actor,id:string){
  return db().transaction(async tx=>{
   const q=(sql:string,...args:any[])=>tx.prepare(sql).bind(...args);
   const service=await q('SELECT * FROM services WHERE id=?',id).first<any>();
-  const members=(await q('SELECT * FROM service_members WHERE service_id=? ORDER BY name,officer_id',id).all<any>()).results;
+  const members=(await q('SELECT * FROM service_members WHERE service_id=? ORDER BY CASE WHEN officer_id=? THEN 0 ELSE 1 END,name,officer_id',id,service?.commander_officer_id||'').all<any>()).results;
   const own=members.some(m=>m.officer_id===a.officer_id);
   if(!service||!a.is_global&&!own&&!a.managementCities?.includes(service.city))throw new UserError('Relatório não disponível para este acesso.',403);
   const raw=await q('SELECT * FROM checks WHERE id=?',id).first<any>();
