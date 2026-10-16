@@ -25,7 +25,7 @@ export async function unifiedServiceReport(a:Actor,id:string){
    const h=history.filter(h=>h.vehicle_id===vid&&Date.parse(h.created_at)<=Date.parse(at)).at(-1);
    const saved=h?(h.kind==='correcao'?h.payload.after:h.payload):null;
    const current=custody.find(v=>v.id===vid);
-   return {id:vid,type:saved?.type||current?.type||'',physical:physical||saved?.physical||current?.physical||{},entered_at:saved?.entered_at||current?.entered_at||null,reason:saved?.reason||'',notes:saved?.notes||'',identification_source:physical||saved?'Registro histórico':'Cadastro atual; identificação histórica indisponível no registro anterior'};
+   return {id:vid,type:saved?.type||current?.type||'',physical:physical||saved?.physical||current?.physical||{},entered_at:saved?.entered_at||current?.entered_at||null,reason:saved?.reason||'',notes:saved?.notes||'',tampering_reported:saved?.tampering_reported??null,difference_notes:saved?.difference_notes||'',identification_source:physical||saved?'Registro histórico':'Cadastro atual; identificação histórica indisponível no registro anterior'};
   }
   const vehicleEntries=vehicleEvents.filter(e=>e.kind==='cadastro').map(e=>({...vehicleAt(e.vehicle_id,e.created_at),...e.payload,id:e.vehicle_id,registered_at:e.created_at,actor_name:e.actor_name,actor_registration:e.actor_registration}));
   const vehicleExits=vehicleEvents.filter(e=>e.kind==='saida').map(e=>({...vehicleAt(e.vehicle_id,e.created_at),...e.payload.vehicle_snapshot,...e.payload,...(e.payload.vehicle_snapshot?{identification_source:'Registro histórico'}:{}),id:e.vehicle_id,registered_at:e.created_at,actor_name:e.actor_name,actor_registration:e.actor_registration}));
