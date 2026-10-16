@@ -1,3 +1,4 @@
+import {unifiedServiceReport} from './service-report.ts';
 import {fixedLoadAction} from './fixed-loads.ts';
 import {servicesData,serviceAction,checkServiceLock,persistService} from './services.ts';
 import {structureAction} from './structure-admin.ts';
@@ -19,7 +20,7 @@ function error(e:unknown){console.error(e instanceof Error?e.message:e);if((e as
 export async function GET(req:Request){try{
  const a=await actor(req,true);return await db().asActor(a.id,async()=>{
  if(a.must_change_password)return json({user:a,passwordChangeRequired:true});if(a.approval_pending)return json({user:a,approvalPending:true});
- const u=new URL(req.url);const file=await serviceFile(a,u);if(file)return json(file);if(u.searchParams.has('services'))return json(await servicesData(a));const vehicleResponse=await vehicleGet(a,u);if(vehicleResponse)return json(vehicleResponse);if(u.searchParams.has('report'))return json(await report(a,u.searchParams.get('report')!));
+ const u=new URL(req.url);const file=await serviceFile(a,u);if(file)return json(file);if(u.searchParams.has('services'))return json(await servicesData(a));const vehicleResponse=await vehicleGet(a,u);if(vehicleResponse)return json(vehicleResponse);if(u.searchParams.has('serviceReport'))return json(await unifiedServiceReport(a,u.searchParams.get('serviceReport')!));if(u.searchParams.has('report'))return json(await report(a,u.searchParams.get('report')!));
  const selected=u.searchParams.get('city')?city(u.searchParams.get('city')):PLATOONS.find(p=>p.id===a.home_platoon)?.cities.find(c=>a.cities?.includes(c))||a.cities?.[0]||a.managementCities?.[0];if(!selected)throw new UserError('Não há vínculos operacionais ativos. Procure o gestor geral.',403);if(a.role==='policial'||!a.managementCities?.includes(selected))operate(a,selected);
  const rootId=await ownerId(),globalId=await generalOfficer();const isAdmin=a.role!=='policial';const scope=new Set(isAdmin?[...(a.managementCities||[]),selected]:[selected]);
  const [items,officers,categories,allChecks,movements,alerts,audit,memberships,corrections]=await Promise.all([stmt(stockQuery+' ORDER BY i.category,i.name,i.serial').all<any>(),stmt('SELECT * FROM officers ORDER BY city,rank,name').all<any>(),stmt('SELECT * FROM categories ORDER BY name').all<any>(),stmt('SELECT * FROM checks ORDER BY created_at DESC').all<any>(),stmt('SELECT * FROM movements ORDER BY withdrawn_at DESC').all<any>(),stmt('SELECT * FROM alerts ORDER BY created_at DESC').all<any>(),stmt('SELECT * FROM audit ORDER BY created_at DESC LIMIT 1000').all<any>(),stmt('SELECT * FROM officer_platoons WHERE active=1').all<any>(),stmt('SELECT * FROM check_corrections ORDER BY created_at').all<any>()]);
