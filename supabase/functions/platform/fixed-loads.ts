@@ -28,6 +28,7 @@ export async function saveFixedProfile(tx:any,a:Actor,officerId:string,body:any,
  await q(tx,'INSERT INTO fixed_pistols(id,officer_id,manufacturer,model,caliber,serial,created_at,created_by,replacement_reason,model_code,ammunition,ballistic_plate,profile_notes,created_by_name,created_by_registration) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',id,o.id,manufacturer,model_code,caliber,serial,now,a.id,reason,model_code,ammunition,ballistic_plate,profile_notes,a.name,a.registration||'').run();const saved=await q(tx,'SELECT * FROM fixed_pistols WHERE id=?',id).first<any>();await tx.batch([auditStmt(a,current?'Carga fixa atualizada':'Carga fixa cadastrada',id,current,{...saved,city:o.city,officer_name:o.name},now)]);if(serviceId)await serviceEvent(tx,a,serviceId,'cadastro_carga_fixa',{officer_id:o.id,profile_id:id,previous_id:current?.id||null,reason},now);return saved;
 }
 export async function confirmFixedForService(tx:any,a:Actor,service:any,member:any,b:any,now:string){
+ if(service.status==='preparacao'||!service.conference_at)throw new UserError('Finalize a conferência inicial para confirmar a carga fixa neste serviço.',409);
  if(b.confirm_fixed_load!==true)throw new UserError('Confirme os dados da carga fixa utilizada por este policial.');await fixedAccess(tx,a,member.officer_id,service.id);
  if(member.fixed_load_confirmation)return member.fixed_load_confirmation;
  const p=await saveFixedProfile(tx,a,member.officer_id,b.fixed_load,now,service.id);

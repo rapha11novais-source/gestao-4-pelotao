@@ -3,7 +3,7 @@ import {servicesData,serviceAction,checkServiceLock,persistService} from './serv
 import {structureAction} from './structure-admin.ts';
 import {structure} from './structure.ts';
 import {serviceUpload,serviceFile} from './service-files.ts';
-import {vehicleGet,vehicleAction,vehicleServiceStarted,vehicleFinalization,vehicleReadCities} from './vehicles.ts';
+import {vehicleGet,vehicleAction,vehicleFinalization,persistVehicleFinalization,vehicleReadCities} from './vehicles.ts';
 import {vehicleUpload} from './vehicle-files.ts';
 import {operationalDashboard} from './operational-dashboard.ts';
 import {actor,admin,stmt,db,UserError,textValue,integer,auditStmt,guard,clearGuard,ownerId,mutableUser,generalOfficer,allow,operate,general,manageOfficer,readRecord,authAdmin} from './server.ts';
@@ -28,7 +28,7 @@ export async function GET(req:Request){try{
  const boardCities=a.capabilities?.global_status?CITIES:isAdmin?a.managementCities||[]:[];const today=localDay();const start=u.searchParams.get('start')||today,end=u.searchParams.get('end')||today;if(!/^\d{4}-\d{2}-\d{2}$/.test(start)||!/^\d{4}-\d{2}-\d{2}$/.test(end)||start>end)throw new UserError('Período inválido.');
  const loadRows=await stmt('SELECT l.*,o.registration FROM loads l LEFT JOIN officers o ON o.id=l.officer_id ORDER BY l.created_at DESC').all<any>();
  const dashboard=operationalDashboard({cities:boardCities,checks:allChecks.results,loads:loadRows.results,alerts:alerts.results,movements:movements.results,start,end,canReadDetails:c=>!!a.is_global||isAdmin&&!!a.managementCities?.includes(c)});
- const serviceStatus=(await stmt('SELECT DISTINCT ON(city) city,status,modality,planned_start,timing_source,started_at,planned_end,duration_hours,ended_at,commander_name,legacy FROM services ORDER BY city,created_at DESC,id DESC').all<any>()).results;dashboard.forEach(d=>{const v=serviceStatus.find(x=>x.city===d.city);if(v)Object.assign(d,{service:{...v,status:v.status!=='encerrado'&&Date.now()>Date.parse(v.planned_end)?'aguardando_encerramento':v.status}});});
+ const serviceStatus=(await stmt('SELECT DISTINCT ON(city) city,status,modality,planned_start,timing_source,started_at,planned_end,duration_hours,ended_at,commander_name,legacy FROM services ORDER BY city,created_at DESC,id DESC').all<any>()).results;dashboard.forEach(d=>{const v=serviceStatus.find(x=>x.city===d.city);if(v)Object.assign(d,{service:{...v,status:!['preparacao','encerrado'].includes(v.status)&&Date.now()>Date.parse(v.planned_end)?'aguardando_encerramento':v.status}});});
  const custodyStats=(await stmt("SELECT city,count(*)::integer AS present FROM vehicle_custodies WHERE status='aguardando' GROUP BY city").all<any>()).results;const custodyAlerts=(await stmt("SELECT city,kind,count(*)::integer AS total FROM vehicle_alerts WHERE status='aberta' GROUP BY city,kind").all<any>()).results;dashboard.forEach(d=>{const totals=custodyAlerts.filter(x=>x.city===d.city);const missing=totals.find(x=>x.kind==='divergencia')?.total||0;Object.assign(d,{vehicle_present:custodyStats.find(x=>x.city===d.city)?.present||0,vehicle_divergences:missing});d.pending+=totals.filter(x=>['pendente','permanencia','caracteristicas','divergencia'].includes(x.kind)).reduce((n,x)=>n+x.total,0);if(missing)d.status='divergencia';});
  const vehicleScope=vehicleReadCities(a);const vehicle_alert_count=vehicleScope.length?(await stmt('SELECT COUNT(*)::integer AS total FROM vehicle_alerts WHERE status=\'aberta\' AND city IN ('+vehicleScope.map(()=>'?').join(',')+')',...vehicleScope).first<any>())?.total||0:0;
  const serviceDetails=await servicesData(a);return json({service_data:serviceDetails,structure:{platoons:structure().platoons.map(p=>({...p,commander_officer_id:a.is_global?p.commander_officer_id:null})),units:structure().units,municipalities:structure().municipalities},vehicle_alert_count,user:a,period:{start,end},selectedCity:selected,platoons:PLATOONS,cities:a.cities,dashboard,loads:await personalLoads(a),items:items.results.filter(i=>a.is_global||scope.has(i.location)||isAdmin&&a.managementCities?.includes(i.city)).map(i=>({...i,reserved:Number(i.reserved),available:Math.max(0,i.quantity-Number(i.reserved))})),primaryAccount:a.is_global?{id:rootId,name:'4º Pelotão',protected:true}:undefined,officers:people,categories:categories.results,checks:visibleChecks.map(c=>({...c,service:serviceDetails.services.find((v:any)=>v.id===c.id),corrections:corrections.results.filter(x=>x.check_id===c.id),entries:JSON.parse(c.entries),crew:JSON.parse(c.crew),crew_labels:JSON.parse(c.crew_labels||'[]')})),movements:movements.results.filter(m=>a.is_global||m.officer_id===a.officer_id||isAdmin&&a.managementCities?.some(c=>c===m.origin||c===m.destination)),alerts:alerts.results.filter(x=>a.is_global||isAdmin&&a.managementCities?.includes(x.city)||ids.has(x.check_id)&&allChecks.results.some(c=>c.id===x.check_id&&c.actor===a.id)),audit:a.is_global?audit.results.slice(0,300):audit.results.filter(x=>a.role==='policial'?x.actor===a.id:a.capabilities?.audit&&x.platoon_id===a.home_platoon).slice(0,300),serverTime:new Date().toISOString()});
@@ -60,7 +60,7 @@ export async function POST(req:Request){try{
    if(final&&(needsJustification(entry,i.quantity)||unavailable)&&notes.length<3)throw new UserError('Inclua uma justificativa para cada divergência, ausência ou condição ruim.');
    return entry;
   });
-  await db().transaction(async tx=>{await tx.prepare('SELECT name FROM cities WHERE name=? FOR UPDATE').bind(selected).first();await checkServiceLock(tx,a,id,selected,old,crew,b);const vehicleSnapshot=final?await vehicleFinalization(tx,a,id,selected):[];
+  await db().transaction(async tx=>{await tx.prepare('SELECT name FROM cities WHERE name=? FOR UPDATE').bind(selected).first();await checkServiceLock(tx,a,id,selected,old,crew,b);const vehicleSnapshot=await vehicleFinalization(tx,a,id,selected,b.vehicle_entries,now,final);
   const statements:any[]=[];const gid=crypto.randomUUID();
   if(old)statements.push(guard(gid,'SELECT COUNT(*)=1 FROM checks WHERE id=? AND actor=? AND status=? AND updated_at=?',id,a.id,'rascunho',old.updated_at));
   else statements.push(guard(gid,'SELECT COUNT(*)=0 FROM checks WHERE id=?',id));
@@ -72,7 +72,7 @@ export async function POST(req:Request){try{
   });
   statements.push(auditStmt(a,final?'Conferência finalizada':'Rascunho salvo',id,old,{city:selected,crew,entries},now),clearGuard(gid));
   if(final){entries.forEach((_,idx)=>statements.push(clearGuard(gid+'-'+idx)));statements.push(clearGuard(gid+'-count'));}
-  await tx.batch(statements);await persistService(tx,a,id,selected,old,crewRows.results,b,final,now);if(!final)await vehicleServiceStarted(tx,a,id,selected,now);});return json({ok:true,id});
+  await tx.batch(statements);await persistService(tx,a,id,selected,old,crewRows.results,b,final,now);if(final)await persistVehicleFinalization(tx,a,id,selected,vehicleSnapshot,now);});return json({ok:true,id});
  }
  admin(a);
  if(action==='save-item'){
