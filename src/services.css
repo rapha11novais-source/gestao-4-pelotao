@@ -10,3 +10,5 @@
 .ops-unit-stock{display:grid;gap:7px;padding:12px;background:#f0f6fa;border-radius:8px;margin:12px 0;font-size:12px;color:#466173}.ops-unit-stock strong{color:#18344c}
 
 .fixed-load-summary{display:grid;gap:6px;padding:16px;border:1px solid #bfe1df;background:#edf8f5;border-radius:10px;margin:12px 0;color:#1d5455}.fixed-load-summary strong{display:flex;gap:7px;align-items:center}.fixed-load-summary p{margin:0}.fixed-load-summary small{color:#507274}.fixed-profile-version{padding:16px;border:1px solid #dce5ed;border-radius:12px;margin-bottom:14px}.fixed-load-fields{padding:12px 0}.fixed-confirm-choice{padding:14px;background:#f0f7f9;border-radius:10px;margin:12px 0}
+
+.material-bulk-actions{display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin:12px 0 18px}.material-bulk-actions>small{flex-basis:100%;color:var(--muted,#61748a);line-height:1.5}.material-bulk-actions .btn{white-space:normal;text-align:left}
